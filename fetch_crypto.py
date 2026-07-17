@@ -241,6 +241,10 @@ def build_rows(entities, cg):
         age = (now.timestamp() - ts) / 31_557_600 if ts else None
 
         mos = (1 - pf / FAIR_PF) * 100 if pf is not None else None
+        # MoS diluido: mismo cálculo pero sobre FDV — castiga la dilución
+        # pendiente (lección SECZ: P/F 0.1 con 96% de tokens sin emitir)
+        pf_fdv = fdv / fees_ann if (fdv and fees_ann > 0) else None
+        mos_fdv = (1 - pf_fdv / FAIR_PF) * 100 if pf_fdv is not None else None
         stars = 0
         if pf is not None and pf <= FAIR_PF:
             stars += 1
@@ -277,6 +281,8 @@ def build_rows(entities, cg):
             'ath_down': rnd(c.get('ath_change_percentage'), 1),
             'audits': e['audits'] or None,
             'mos': rnd(mos, 1),
+            'pf_fdv': rnd(pf_fdv, 1),
+            'mos_fdv': rnd(mos_fdv, 1),
             'stars': stars,
             'trap': trap,
             'valid': pf is not None,

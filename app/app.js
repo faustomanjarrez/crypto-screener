@@ -134,6 +134,13 @@ function initData() {
   } else {
     DATA = imported || bundled || { updated: null, protocols: [] };
   }
+  // v1.2: derivar MoS diluido si el dataset es anterior a la métrica
+  for (const p of DATA.protocols) {
+    if (p.mos_fdv === undefined && p.fdv && p.fees_ann > 0) {
+      p.pf_fdv = p.fdv / p.fees_ann;
+      p.mos_fdv = (1 - p.pf_fdv / FAIR_PF) * 100;
+    }
+  }
   updateHdr();
 }
 
@@ -163,8 +170,8 @@ function applyFilters() {
     }
   });
 
-  const dir = { mos: -1, stars: -1, mcap: -1, fees30d: -1, yield: -1, pf: 1, fdv_mc: 1, ticker: 1 }[state.sort];
-  const key = { mos: 'mos', stars: 'stars', mcap: 'market_cap', fees30d: 'fees30d', yield: 'yield', pf: 'pf', fdv_mc: 'fdv_mc', ticker: 'ticker' }[state.sort];
+  const dir = { mos: -1, mosfdv: -1, stars: -1, mcap: -1, fees30d: -1, yield: -1, pf: 1, fdv_mc: 1, ticker: 1 }[state.sort];
+  const key = { mos: 'mos', mosfdv: 'mos_fdv', stars: 'stars', mcap: 'market_cap', fees30d: 'fees30d', yield: 'yield', pf: 'pf', fdv_mc: 'fdv_mc', ticker: 'ticker' }[state.sort];
   filtered.sort((a, b) => {
     let va = a[key], vb = b[key];
     if (key === 'ticker') return (va || '').localeCompare(vb || '');
@@ -203,7 +210,7 @@ function renderMore() {
       <div class="sc-mos">${mosHtml(p.mos)}</div>
       <div class="sc-name">${escHtml(p.name || '')} · ${escHtml(p.category || '')}</div>
       <div class="sc-bottom">
-        <span class="sc-prices">P/F <b>${fmtRatio(p.pf)}</b> · FDV/MC <b>${fmtRatio(p.fdv_mc, 2)}</b> · ${fmtMcap(p.market_cap)}</span>
+        <span class="sc-prices">P/F <b>${fmtRatio(p.pf)}</b> · FDV/MC <b class="${p.fdv_mc != null && p.fdv_mc > 3 ? 'hi-dil' : ''}">${fmtRatio(p.fdv_mc, 2)}${p.fdv_mc != null && p.fdv_mc > 3 ? ' ⚠' : ''}</b> · ${fmtMcap(p.market_cap)}</span>
         ${starsHtml(p.stars)}
       </div>`;
     card.addEventListener('click', () => openDetail(p));
@@ -272,6 +279,7 @@ function openDetail(p) {
       <div class="dt-metric"><div class="k">P/F</div><div class="v">${fmtRatio(p.pf)}</div></div>
       <div class="dt-metric"><div class="k">${t('dt_mcap')}</div><div class="v">${fmtMcap(p.market_cap)}</div></div>
       <div class="dt-metric"><div class="k">${t('dt_fdv')} · FDV/MC</div><div class="v">${fmtMcap(p.fdv)} · ${fmtRatio(p.fdv_mc, 2)}</div></div>
+      <div class="dt-metric"><div class="k">${t('dt_mosfdv')}</div><div class="v">${fmtPct(p.mos_fdv)}</div></div>
       <div class="dt-metric"><div class="k">${t('dt_tvl')} · MC/TVL</div><div class="v">${fmtMcap(p.tvl)} · ${fmtRatio(p.mc_tvl, 2)}</div></div>
       <div class="dt-metric"><div class="k">P/R</div><div class="v">${fmtRatio(p.pr)}</div></div>
       <div class="dt-metric"><div class="k">${t('dt_fees30')}</div><div class="v">${fmtMcap(p.fees30d)}</div></div>
@@ -477,12 +485,16 @@ function renderFNG() {
 function renderMarket() {
   renderFNG();
 
-  // stats globales
+  // stats globales + P/F mediano del universo (lectura de régimen: si TODO
+  // está barato, el MoS individual vale como ranking, no como señal absoluta)
   const g = DATA.global || {};
+  const pfs = DATA.protocols.map((p) => p.pf).filter((v) => v != null).sort((a, b) => a - b);
+  const medPf = pfs.length ? pfs[Math.floor(pfs.length / 2)] : null;
   $('globalStats').innerHTML = `
     <div class="stat"><div class="v">${g.mcap ? fmtMcap(g.mcap) : '—'}</div><div class="l">${t('gl_mcap')}</div></div>
     <div class="stat"><div class="v">${g.btc_dom != null ? g.btc_dom + '%' : '—'}</div><div class="l">${t('gl_btc')}</div></div>
-    <div class="stat"><div class="v">${g.eth_dom != null ? g.eth_dom + '%' : '—'}</div><div class="l">${t('gl_eth')}</div></div>`;
+    <div class="stat"><div class="v">${g.eth_dom != null ? g.eth_dom + '%' : '—'}</div><div class="l">${t('gl_eth')}</div></div>
+    <div class="stat"><div class="v">${medPf != null ? medPf.toFixed(1) : '—'}</div><div class="l">${t('gl_pf')}</div></div>`;
 
   // categorías con oportunidades (MoS >= 0, sin trampas)
   const byCat = {};
@@ -501,12 +513,14 @@ function renderMarket() {
       </div>`).join('')
     : `<div class="empty-msg">${t('sec_empty')}</div>`;
 
-  // top 10 por MoS (sin trampas)
+  // top 10 por MoS diluido (v1.2: rankear sobre FDV castiga la dilución
+  // pendiente; sin trampas)
+  const rankMos = (p) => p.mos_fdv != null ? p.mos_fdv : p.mos;
   const top = DATA.protocols
-    .filter((p) => p.valid && p.mos != null && !p.trap)
-    .sort((a, b) => b.mos - a.mos)
+    .filter((p) => p.valid && rankMos(p) != null && !p.trap)
+    .sort((a, b) => rankMos(b) - rankMos(a))
     .slice(0, 10);
-  $('topList').innerHTML = topListHtml(top, (p) => '+' + p.mos.toFixed(1) + '%');
+  $('topList').innerHTML = topListHtml(top, (p) => fmtPct(rankMos(p)));
   bindTopList('topList');
 
   // top 10 por real yield (sin trampas)

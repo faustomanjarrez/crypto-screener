@@ -109,7 +109,7 @@ main { padding: 14px 14px 20px; max-width: 720px; margin: 0 auto; }
 .stats-row {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
 }
-.stats-market { grid-template-columns: repeat(3, 1fr); margin-bottom: 0; }
+.stats-market { grid-template-columns: repeat(4, 1fr); margin-bottom: 0; }
 .stat {
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
   padding: 10px 6px; text-align: center; box-shadow: var(--shadow);
@@ -191,6 +191,7 @@ main { padding: 14px 14px 20px; max-width: 720px; margin: 0 auto; }
 }
 .sc-prices { font-size: .72rem; color: var(--text2); font-variant-numeric: tabular-nums; }
 .sc-prices b { color: var(--text); }
+.sc-prices b.hi-dil { color: var(--red); }
 .stars { font-size: .8rem; letter-spacing: 1px; }
 .stars .on { color: var(--star); }
 .stars .off { color: var(--star-off); }

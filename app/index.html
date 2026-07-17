@@ -69,6 +69,7 @@
     <select id="sectorSel" aria-label="Categoría"></select>
     <select id="sortSel" aria-label="Sort">
       <option value="mos" data-i18n="sort_mos">↓ Margen de seguridad</option>
+      <option value="mosfdv" data-i18n="sort_mosfdv">↓ MoS diluido (FDV)</option>
       <option value="stars" data-i18n="sort_stars">↓ Estrellas</option>
       <option value="pf" data-i18n="sort_pf">↑ P/F</option>
       <option value="fdv_mc" data-i18n="sort_fdv">↑ FDV/MC</option>
@@ -139,7 +140,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title" data-i18n="top_title">⭐ Top 10 — Mayor margen de seguridad</div>
+    <div class="card-title" data-i18n="top_title">⭐ Top 10 — MoS ajustado por dilución</div>
     <div id="topList"></div>
   </div>
 
@@ -157,7 +158,8 @@
     <ul class="guide-list">
       <li data-i18n="g_m1"><strong>P/F</strong> — market cap ÷ fees anualizados (30d × 12.2). El "P/E de crypto": cuánto pagas por cada dólar de comisiones que genera el protocolo.</li>
       <li data-i18n="g_m2"><strong>25</strong> — P/F de referencia ("justo"). P/F &lt; 25 → el protocolo cotiza barato frente a su actividad real.</li>
-      <li data-i18n="g_m3"><strong>FDV/MC</strong> — dilución pendiente. FDV/MC alto = vienen desbloqueos de tokens que diluirán a los holders (el análogo a la deuda).</li>
+      <li data-i18n="g_m3"><strong>FDV/MC</strong> — dilución pendiente. FDV/MC alto = vienen desbloqueos de tokens que diluirán a los holders (el análogo a la deuda). FDV/MC &gt; 3 se marca con ⚠ en la tarjeta.</li>
+      <li data-i18n="g_m3b"><strong>MoS diluido</strong> — el mismo margen de seguridad pero calculado sobre FDV: asume que ya se emitieron todos los tokens. Es el número "pesimista honesto" y el que usa el Top 10.</li>
       <li data-i18n="g_m4"><strong>MC/TVL</strong> — análogo al P/B: si el token vale menos que el capital depositado en el protocolo, hay respaldo.</li>
       <li data-i18n="g_m5"><strong>Real yield</strong> — fees que se reparten a holders/stakers: el "dividendo" on-chain.</li>
       <li data-i18n="g_m6"><strong>Edad ≥ 2 años</strong> — sobrevivir un ciclo bajista es el filtro de calidad más duro que existe en crypto.</li>
@@ -196,7 +198,7 @@
     <p class="coffee-text" data-i18n="coffee_text">Esta app es gratuita, sin anuncios y sin recolección de datos. Si te ayuda en tus análisis, puedes invitarme un café.</p>
     <a class="btn-coffee" href="https://ko-fi.com/faustomanjarrez" target="_blank" rel="noopener" data-i18n="coffee_btn">☕ Invítame un café</a>
   </div>
-  <p class="legal-links"><a href="privacidad.html" data-i18n="legal_privacy">Política de privacidad</a> · <a href="https://github.com/faustomanjarrez/crypto-screener" target="_blank" rel="noopener" data-i18n="legal_source">Código fuente</a></p>
+  <p class="legal-links"><a href="privacidad.html" data-i18n="legal_privacy">Política de privacidad</a> · <a href="https://github.com/faustomanjarrez/crypto-screener" target="_blank" rel="noopener" data-i18n="legal_source">Código fuente</a> · v1.2</p>
 </section>
 
 </main>

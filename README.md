@@ -22,6 +22,10 @@ Benjamin Graham traducida a crypto: en lugar de EPS y valor libro, usa **fees re
 **Trampas de valor:** P/F < 8 con fees cayendo > 30% se marca con ⚠ — barato + deterioro
 suele ser un protocolo muriendo, no una ganga.
 
+**MoS diluido (v1.2):** el mismo margen de seguridad calculado sobre FDV en lugar de
+market cap — asume toda la emisión futura ya circulando. Es el ranking del Top 10 y evita
+que un P/F bajísimo con dilución masiva pendiente (FDV/MC > 3, marcado ⚠) parezca ganga.
+
 ## Fuentes de datos (gratuitas, sin API key)
 
 - [DefiLlama](https://defillama.com) — fees, revenue, holders revenue, TVL, chains
