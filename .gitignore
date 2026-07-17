@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+crypto_errors.log
+_cache/

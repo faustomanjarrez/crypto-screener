@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4338ca" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0f1d" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Screener de protocolos crypto subvaluados por fundamentales on-chain — fees, TVL y tokenomics">
+<title>Crypto Value Screener</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══ Header ═══ -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <svg class="hdr-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.5v9L12 22l-8-6.5v-9z"/><path d="M12 2v20"/><path d="M4 6.5l8 5.5 8-5.5"/></svg>
+    <div>
+      <h1>Crypto <span>Value</span></h1>
+      <div class="hdr-sub" id="hdrUpdated">—</div>
+    </div>
+  </div>
+  <div class="hdr-actions">
+    <button class="icon-btn btn-lang" id="btnLang" aria-label="Switch language">EN</button>
+    <button class="icon-btn" id="btnRefresh" data-i18n-title="tt_refresh" aria-label="Refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
+    <button class="icon-btn" id="btnImport" data-i18n-title="tt_import" aria-label="Import">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="icon-btn" id="btnTheme" data-i18n-title="tt_theme" aria-label="Theme">
+      <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="iconSun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+  <input type="file" id="fileImport" accept=".json,.js" hidden>
+</header>
+
+<main id="main">
+
+<!-- ═══ VISTA: SCREENER ═══ -->
+<section class="view active" id="view-screener">
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" id="searchBox" data-i18n-ph="search_ph" placeholder="Buscar token o protocolo…" autocomplete="off">
+  </div>
+
+  <div class="chips-scroll" id="filterChips">
+    <button class="chip active" data-filter="all" data-i18n="f_all">Todos</button>
+    <button class="chip" data-filter="strong" data-i18n="f_strong">🟢 MoS ≥ 33%</button>
+    <button class="chip" data-filter="under" data-i18n="f_under">Subvaluados</button>
+    <button class="chip" data-filter="stars4" data-i18n="f_stars4">★★★★</button>
+    <button class="chip" data-filter="over" data-i18n="f_over">Sobrevaluados</button>
+    <button class="chip" data-filter="trap" data-i18n="f_trap">⚠ Trampas</button>
+  </div>
+
+  <div class="chips-scroll" id="qualityChips">
+    <button class="chip chip-q" data-q="yield" data-i18n="f_qyield">💵 Real yield</button>
+    <button class="chip chip-q" data-q="dilution" data-i18n="f_qdil">🔒 Dilución baja</button>
+    <button class="chip chip-q" data-q="tvl" data-i18n="f_qtvl">⛓️ TVL &gt; MC</button>
+  </div>
+
+  <div class="selects-row">
+    <select id="sectorSel" aria-label="Categoría"></select>
+    <select id="sortSel" aria-label="Sort">
+      <option value="mos" data-i18n="sort_mos">↓ Margen de seguridad</option>
+      <option value="stars" data-i18n="sort_stars">↓ Estrellas</option>
+      <option value="pf" data-i18n="sort_pf">↑ P/F</option>
+      <option value="fdv_mc" data-i18n="sort_fdv">↑ FDV/MC</option>
+      <option value="yield" data-i18n="sort_yield">↓ Real yield</option>
+      <option value="fees30d" data-i18n="sort_fees">↓ Fees 30d</option>
+      <option value="mcap" data-i18n="sort_mcap">↓ Capitalización</option>
+      <option value="ticker" data-i18n="sort_ticker">A–Z Token</option>
+    </select>
+  </div>
+
+  <div class="result-count" id="resultCount"></div>
+  <div class="stock-list" id="stockList"></div>
+  <button class="btn-more" id="btnMore" data-i18n="load_more" style="display:none">Cargar más</button>
+</section>
+
+<!-- ═══ VISTA: WATCHLIST ═══ -->
+<section class="view" id="view-watchlist">
+  <div class="card">
+    <div class="card-title" data-i18n="wl_add_title">➕ Agregar protocolo manual</div>
+    <div class="form-grid">
+      <div class="fg"><label for="fTk">Token</label><input id="fTk" type="text" placeholder="UNI" maxlength="12" autocapitalize="characters"></div>
+      <div class="fg"><label for="fMc" data-i18n="wl_mcap">Market cap ($M)</label><input id="fMc" type="number" inputmode="decimal" placeholder="2190" min="0" step="0.1"></div>
+      <div class="fg"><label for="fFe" data-i18n="wl_fees">Fees anuales ($M)</label><input id="fFe" type="number" inputmode="decimal" placeholder="880" min="0" step="0.1"></div>
+      <div class="fg"><label for="fFd" data-i18n="wl_fdv">FDV ($M, opcional)</label><input id="fFd" type="number" inputmode="decimal" placeholder="3140" min="0" step="0.1"></div>
+      <div class="fg fg-full"><label for="fNm" data-i18n="wl_name">Nombre (opcional)</label><input id="fNm" type="text" data-i18n-ph="wl_name_ph" placeholder="Uniswap"></div>
+    </div>
+    <button class="btn-primary" id="btnAdd" data-i18n="wl_add_btn">Agregar a watchlist</button>
+    <p class="form-hint" data-i18n="wl_hint">Fees anualizados en <a href="https://defillama.com/fees" target="_blank" rel="noopener">defillama.com/fees</a> · Market cap y FDV en <a href="https://www.coingecko.com" target="_blank" rel="noopener">coingecko.com</a></p>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title" data-i18n="wl_my">Mi watchlist</span>
+      <span class="card-count" id="wlCount"></span>
+    </div>
+    <div id="wlBody"></div>
+  </div>
+</section>
+
+<!-- ═══ VISTA: MERCADO ═══ -->
+<section class="view" id="view-market">
+  <div class="card">
+    <div class="card-title" data-i18n="fng_title">Fear &amp; Greed Index — sentimiento del mercado</div>
+    <div class="bi-flex">
+      <div id="fngGauge"></div>
+      <div class="bi-info">
+        <div class="bi-num-row"><span class="bi-num" id="fngNum">—</span><span class="bi-unit" data-i18n="fng_unit">/ 100</span></div>
+        <span class="bi-pill" id="fngPill">—</span>
+        <div class="bi-date" id="fngDate"></div>
+      </div>
+    </div>
+    <div class="bi-zones">
+      <span class="zone z-green" data-i18n="fz1">&lt;25 Miedo extremo</span>
+      <span class="zone z-yellow" data-i18n="fz2">25–55 Miedo/Neutral</span>
+      <span class="zone z-orange" data-i18n="fz3">55–75 Codicia</span>
+      <span class="zone z-red" data-i18n="fz4">&gt;75 Codicia extrema</span>
+    </div>
+    <p class="form-hint" data-i18n="fng_hint">Para un inversor de valor, el <strong>miedo extremo</strong> suele ser el mejor momento para buscar; la <strong>codicia extrema</strong>, para tener cautela. Fuente: alternative.me</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title" data-i18n="gl_title">🌐 Mercado global</div>
+    <div class="stats-row stats-market" id="globalStats"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" data-i18n="sec_title">🟢 Oportunidades por categoría <span class="card-title-note">(MoS ≥ 0%)</span></div>
+    <div id="sectorBars"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" data-i18n="top_title">⭐ Top 10 — Mayor margen de seguridad</div>
+    <div id="topList"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" data-i18n="yield_title">💵 Top 10 — Real yield a holders</div>
+    <div id="yieldList"></div>
+  </div>
+</section>
+
+<!-- ═══ VISTA: GUÍA ═══ -->
+<section class="view" id="view-guide">
+  <div class="card">
+    <div class="card-title" data-i18n="g_method_title">📐 Método: Graham traducido a crypto</div>
+    <div class="formula">MoS = 1 − P/F ÷ 25</div>
+    <ul class="guide-list">
+      <li data-i18n="g_m1"><strong>P/F</strong> — market cap ÷ fees anualizados (30d × 12.2). El "P/E de crypto": cuánto pagas por cada dólar de comisiones que genera el protocolo.</li>
+      <li data-i18n="g_m2"><strong>25</strong> — P/F de referencia ("justo"). P/F &lt; 25 → el protocolo cotiza barato frente a su actividad real.</li>
+      <li data-i18n="g_m3"><strong>FDV/MC</strong> — dilución pendiente. FDV/MC alto = vienen desbloqueos de tokens que diluirán a los holders (el análogo a la deuda).</li>
+      <li data-i18n="g_m4"><strong>MC/TVL</strong> — análogo al P/B: si el token vale menos que el capital depositado en el protocolo, hay respaldo.</li>
+      <li data-i18n="g_m5"><strong>Real yield</strong> — fees que se reparten a holders/stakers: el "dividendo" on-chain.</li>
+      <li data-i18n="g_m6"><strong>Edad ≥ 2 años</strong> — sobrevivir un ciclo bajista es el filtro de calidad más duro que existe en crypto.</li>
+      <li data-i18n="g_m7">Solo entran protocolos con <strong>fees reales ≥ $30k/30d</strong> — negocios verificables on-chain, no promesas.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-title" data-i18n="g_stars_title">★ Score de 4 estrellas</div>
+    <ul class="guide-list">
+      <li data-i18n="g_s1">★ P/F ≤ 25 — barato frente a sus fees</li>
+      <li data-i18n="g_s2">★ FDV/MC ≤ 1.5 — poca dilución futura</li>
+      <li data-i18n="g_s3">★ Fees creciendo (30d vs 30d anteriores)</li>
+      <li data-i18n="g_s4">★ Edad ≥ 2 años — sobrevivió al menos un ciclo</li>
+    </ul>
+  </div>
+  <div class="warn-box" data-i18n="g_trap">
+    ⚠️ <strong>Trampas de valor:</strong> un P/F bajísimo con fees en caída (&gt;30%) suele indicar un protocolo muriendo, no una ganga. La app los marca con ⚠. En crypto, barato + deterioro = trampa, igual que en acciones.
+  </div>
+  <div class="card">
+    <div class="card-title" data-i18n="g_upd_title">🔄 Cómo actualizar los datos</div>
+    <ol class="guide-steps">
+      <li data-i18n="g_u1"><strong>Automático:</strong> cada día un robot en la nube (GitHub Actions) baja fees de DefiLlama y precios de CoinGecko, y publica los datos nuevos.</li>
+      <li data-i18n="g_u2">En la app, toca <strong>🔄 Actualizar</strong> (arriba a la derecha). También se refrescan solos al abrir la app con internet.</li>
+      <li data-i18n="g_u3"><strong>Manual (respaldo):</strong> corre <code>run_screener.bat</code> en tu PC y usa <strong>⬇ Importar</strong> con el archivo <code>crypto_screen.json</code>.</li>
+    </ol>
+    <p class="form-hint" data-i18n="g_upd_hint">Los datos se guardan en el teléfono y quedan disponibles sin conexión.</p>
+  </div>
+  <div class="warn-box" data-i18n="g_dex">
+    ℹ️ <strong>Nota sobre DEXs:</strong> en exchanges descentralizados la mayoría de los fees va a los proveedores de liquidez, no al token. Revisa también el <strong>P/R</strong> (revenue del protocolo) en el detalle.
+  </div>
+  <div class="warn-box info" data-i18n="g_edu">
+    ℹ️ Esta app es una herramienta educativa de análisis cuantitativo. Crypto es un mercado extremadamente volátil donde los fundamentales pesan menos que en acciones. No constituye asesoría de inversión.
+  </div>
+  <div class="card coffee-card">
+    <div class="card-title" data-i18n="coffee_title">☕ ¿Te resulta útil?</div>
+    <p class="coffee-text" data-i18n="coffee_text">Esta app es gratuita, sin anuncios y sin recolección de datos. Si te ayuda en tus análisis, puedes invitarme un café.</p>
+    <a class="btn-coffee" href="https://ko-fi.com/faustomanjarrez" target="_blank" rel="noopener" data-i18n="coffee_btn">☕ Invítame un café</a>
+  </div>
+  <p class="legal-links"><a href="privacidad.html" data-i18n="legal_privacy">Política de privacidad</a> · <a href="https://github.com/faustomanjarrez/crypto-screener" target="_blank" rel="noopener" data-i18n="legal_source">Código fuente</a></p>
+</section>
+
+</main>
+
+<!-- ═══ Bottom Nav ═══ -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-view="screener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span data-i18n="nav_screener">Screener</span>
+  </button>
+  <button class="nav-item" data-view="watchlist">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+    <span data-i18n="nav_watchlist">Watchlist</span>
+  </button>
+  <button class="nav-item" data-view="market">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12l6-6"/><path d="M22 2l-4 1 3 3z" fill="currentColor" stroke="none"/></svg>
+    <span data-i18n="nav_market">Mercado</span>
+  </button>
+  <button class="nav-item" data-view="guide">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    <span data-i18n="nav_guide">Guía</span>
+  </button>
+</nav>
+
+<!-- ═══ Detail Sheet ═══ -->
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+  <div class="sheet-handle"></div>
+  <div id="sheetBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
