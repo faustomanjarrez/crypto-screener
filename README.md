@@ -26,6 +26,11 @@ suele ser un protocolo muriendo, no una ganga.
 market cap — asume toda la emisión futura ya circulando. Es el ranking del Top 10 y evita
 que un P/F bajísimo con dilución masiva pendiente (FDV/MC > 3, marcado ⚠) parezca ganga.
 
+**Históricos (v1.3):** cada corrida diaria agrega un punto a `history.json` (P/F mediano,
+Fear & Greed, cap total, % subvaluados) — el "Indicador Buffett de crypto" que se
+construye solo. Además, la vista Mercado grafica un año de fees anualizados de todo el
+mercado (el "PIB on-chain"), con histórico real de DefiLlama.
+
 ## Fuentes de datos (gratuitas, sin API key)
 
 - [DefiLlama](https://defillama.com) — fees, revenue, holders revenue, TVL, chains

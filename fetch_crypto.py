@@ -74,7 +74,10 @@ def get_cached(name, url):
 def download_llama():
     over = '/overview/fees?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true'
     log('Descargando DefiLlama…')
-    fees = get_cached('llama_fees.json', LLAMA + over)
+    # la llamada principal de fees trae también totalDataChart (serie diaria
+    # de fees de TODO el mercado) para la gráfica histórica
+    fees = get_cached('llama_fees_chart.json',
+                      LLAMA + '/overview/fees?excludeTotalDataChartBreakdown=true')
     rev = get_cached('llama_revenue.json', LLAMA + over + '&dataType=dailyRevenue')
     hold = get_cached('llama_holders.json', LLAMA + over + '&dataType=dailyHoldersRevenue')
     prots = get_cached('llama_protocols.json', LLAMA + '/protocols')
@@ -291,7 +294,52 @@ def build_rows(entities, cg):
     return rows[:MAX_ROWS]
 
 
-# ── 5. Contexto de mercado ─────────────────────────────────────────────────
+# ── 5. Series históricas ───────────────────────────────────────────────────
+def build_market_fees_series(fees):
+    """Fees anualizados de todo el mercado (suma móvil 30d × 12.17),
+    último año, muestreado cada 7 días."""
+    chart = fees.get('totalDataChart') or []
+    if len(chart) < 40:
+        return []
+    daily = [(int(ts), v or 0) for ts, v in chart]
+    out = []
+    for i in range(29, len(daily)):
+        ann = sum(v for _, v in daily[i - 29:i + 1]) * 365 / 30
+        day = datetime.fromtimestamp(daily[i][0], timezone.utc).strftime('%Y-%m-%d')
+        out.append([day, round(ann)])
+    out = out[-365:]
+    # muestreo semanal conservando siempre el último punto
+    sampled = out[::-7][::-1]
+    return sampled
+
+
+def update_history(med_pf, fng, glob, valid, under):
+    """Upsert de la entrada de hoy en history.json (se acumula día a día)."""
+    path = os.path.join(BASE, 'history.json')
+    hist = []
+    if os.path.exists(path):
+        try:
+            with open(path, encoding='utf-8') as f:
+                hist = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            log(f'  ⚠ history.json ilegible, se reinicia: {e}')
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    entry = {
+        'd': today,
+        'pf': round(med_pf, 1) if med_pf is not None else None,
+        'fng': fng.get('value'),
+        'mcap': glob.get('mcap'),
+        'up': round(under / valid * 100, 1) if valid else None,
+    }
+    hist = [h for h in hist if h.get('d') != today] + [entry]
+    hist.sort(key=lambda h: h['d'])
+    hist = hist[-1095:]  # ~3 años
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(hist, f, ensure_ascii=False, indent=0)
+    return hist
+
+
+# ── 6. Contexto de mercado ─────────────────────────────────────────────────
 def fetch_market_context():
     fng = {}
     glob = {}
@@ -330,6 +378,11 @@ def main():
     under = [r for r in valid if r['mos'] is not None and r['mos'] >= 0]
     strong = [r for r in under if r['mos'] >= 33 and not r['trap']]
 
+    pfs = sorted(r['pf'] for r in valid if r['pf'] is not None)
+    med_pf = pfs[len(pfs) // 2] if pfs else None
+    market_fees = build_market_fees_series(fees)
+    history = update_history(med_pf, fng, glob, len(valid), len(under))
+
     data = {
         'updated': datetime.now(timezone.utc).isoformat(),
         'source': 'DefiLlama (fees/TVL) + CoinGecko (mcap/FDV)',
@@ -337,6 +390,9 @@ def main():
         'total': len(rows), 'valid': len(valid),
         'undervalued': len(under), 'strong': len(strong),
         'fng': fng, 'global': glob,
+        'med_pf': med_pf,
+        'history': history,
+        'market_fees': market_fees,
         'protocols': rows,
     }
 

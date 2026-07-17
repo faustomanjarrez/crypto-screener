@@ -274,6 +274,12 @@ main { padding: 14px 14px 20px; max-width: 720px; margin: 0 auto; }
 .z-orange { background: var(--orange-bg); color: var(--orange-text); }
 .z-red { background: var(--red-bg); color: var(--red-text); }
 
+/* ═══ Gráficas ═══ */
+.chart { width: 100%; height: auto; display: block; margin-bottom: 6px; }
+.ch-lbl { font-size: 9px; fill: var(--text3); font-weight: 600; }
+.ch-building { text-align: center; padding: 18px 10px; color: var(--text3); font-size: .76rem; line-height: 1.5; }
+.ch-building .ch-big { display: block; font-size: 1.8rem; font-weight: 800; color: var(--accent); margin-bottom: 6px; }
+
 /* Category bars */
 .sbar { margin-bottom: 10px; }
 .sbar-head { display: flex; justify-content: space-between; font-size: .72rem; margin-bottom: 4px; }

@@ -482,14 +482,63 @@ function renderFNG() {
   }
 }
 
+// ── Gráficas SVG (sin librerías) ─────────────────────────────────────────
+// series: [[etiqueta, valor], ...] — dibuja línea + área con min/max/fechas
+function lineChart(series, fmtVal) {
+  const W = 320, H = 100, PL = 6, PR = 6, PT = 16, PB = 16;
+  const vals = series.map((p) => p[1]);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = (max - min) || 1;
+  const x = (i) => PL + i * (W - PL - PR) / (series.length - 1);
+  const y = (v) => PT + (1 - (v - min) / span) * (H - PT - PB);
+  const pts = series.map((p, i) => `${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
+  const li = series.length - 1;
+  const fmtD = (d) => {
+    try { return new Date(d + 'T00:00:00Z').toLocaleDateString(t('locale'), { month: 'short', year: '2-digit', timeZone: 'UTC' }); }
+    catch { return d; }
+  };
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart" preserveAspectRatio="none">
+    <polygon points="${PL},${H - PB} ${pts} ${(W - PR)},${H - PB}" fill="var(--accent-soft)" opacity=".5"/>
+    <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(li).toFixed(1)}" cy="${y(series[li][1]).toFixed(1)}" r="3" fill="var(--accent)"/>
+    <text x="${PL}" y="10" class="ch-lbl">${t('ch_max')} ${fmtVal(max)} · ${t('ch_min')} ${fmtVal(min)}</text>
+    <text x="${PL}" y="${H - 4}" class="ch-lbl">${fmtD(series[0][0])}</text>
+    <text x="${W - PR}" y="${H - 4}" text-anchor="end" class="ch-lbl">${fmtD(series[li][0])}</text>
+  </svg>`;
+}
+
+function renderHistCharts() {
+  // P/F mediano histórico — se acumula una entrada por corrida diaria
+  const hist = (DATA.history || []).filter((h) => h.pf != null).map((h) => [h.d, h.pf]);
+  if (hist.length >= 2) {
+    $('histChart').innerHTML = lineChart(hist, (v) => v.toFixed(1));
+    $('histLast').textContent = `${t('ch_today')}: ${hist[hist.length - 1][1].toFixed(1)}`;
+  } else {
+    const cur = DATA.med_pf != null ? DATA.med_pf.toFixed(1) : '—';
+    $('histChart').innerHTML = `<div class="ch-building"><span class="ch-big">${cur}</span>${t('hist_building')}</div>`;
+    $('histLast').textContent = '';
+  }
+
+  // fees anualizados de todo el mercado (backfill 1 año de DefiLlama)
+  const mf = DATA.market_fees || [];
+  if (mf.length >= 2) {
+    $('feesChart').innerHTML = lineChart(mf, (v) => fmtMcap(v));
+    $('feesLast').textContent = `${t('ch_today')}: ${fmtMcap(mf[mf.length - 1][1])}`;
+  } else {
+    $('feesChart').innerHTML = `<div class="empty-msg">${t('fng_nodata')}</div>`;
+    $('feesLast').textContent = '';
+  }
+}
+
 function renderMarket() {
   renderFNG();
+  renderHistCharts();
 
   // stats globales + P/F mediano del universo (lectura de régimen: si TODO
   // está barato, el MoS individual vale como ranking, no como señal absoluta)
   const g = DATA.global || {};
   const pfs = DATA.protocols.map((p) => p.pf).filter((v) => v != null).sort((a, b) => a - b);
-  const medPf = pfs.length ? pfs[Math.floor(pfs.length / 2)] : null;
+  const medPf = DATA.med_pf != null ? DATA.med_pf : (pfs.length ? pfs[Math.floor(pfs.length / 2)] : null);
   $('globalStats').innerHTML = `
     <div class="stat"><div class="v">${g.mcap ? fmtMcap(g.mcap) : '—'}</div><div class="l">${t('gl_mcap')}</div></div>
     <div class="stat"><div class="v">${g.btc_dom != null ? g.btc_dom + '%' : '—'}</div><div class="l">${t('gl_btc')}</div></div>
