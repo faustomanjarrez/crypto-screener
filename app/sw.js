@@ -1,5 +1,5 @@
 /* Crypto Value Screener — service worker (offline-first, actualizaciones atómicas) */
-const CACHE = 'crypto-v4';
+const CACHE = 'crypto-v5';
 const ASSETS = [
   './',
   './index.html',

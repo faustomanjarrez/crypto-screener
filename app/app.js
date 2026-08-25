@@ -170,8 +170,8 @@ function applyFilters() {
     }
   });
 
-  const dir = { mos: -1, mosfdv: -1, stars: -1, mcap: -1, fees30d: -1, yield: -1, pf: 1, fdv_mc: 1, ticker: 1 }[state.sort];
-  const key = { mos: 'mos', mosfdv: 'mos_fdv', stars: 'stars', mcap: 'market_cap', fees30d: 'fees30d', yield: 'yield', pf: 'pf', fdv_mc: 'fdv_mc', ticker: 'ticker' }[state.sort];
+  const dir = { mos: -1, mosfdv: -1, stars: -1, mcap: -1, fees30d: -1, yield: -1, age: -1, pf: 1, fdv_mc: 1, ticker: 1 }[state.sort];
+  const key = { mos: 'mos', mosfdv: 'mos_fdv', stars: 'stars', mcap: 'market_cap', fees30d: 'fees30d', yield: 'yield', age: 'age', pf: 'pf', fdv_mc: 'fdv_mc', ticker: 'ticker' }[state.sort];
   filtered.sort((a, b) => {
     let va = a[key], vb = b[key];
     if (key === 'ticker') return (va || '').localeCompare(vb || '');
@@ -210,7 +210,7 @@ function renderMore() {
       <div class="sc-mos">${mosHtml(p.mos)}</div>
       <div class="sc-name">${escHtml(p.name || '')} · ${escHtml(p.category || '')}</div>
       <div class="sc-bottom">
-        <span class="sc-prices">P/F <b>${fmtRatio(p.pf)}</b> · FDV/MC <b class="${p.fdv_mc != null && p.fdv_mc > 3 ? 'hi-dil' : ''}">${fmtRatio(p.fdv_mc, 2)}${p.fdv_mc != null && p.fdv_mc > 3 ? ' ⚠' : ''}</b> · ${fmtMcap(p.market_cap)}</span>
+        <span class="sc-prices">P/F <b>${fmtRatio(p.pf)}</b> · FDV/MC <b class="${p.fdv_mc != null && p.fdv_mc > 3 ? 'hi-dil' : ''}">${fmtRatio(p.fdv_mc, 2)}${p.fdv_mc != null && p.fdv_mc > 3 ? ' ⚠' : ''}</b> · ${fmtMcap(p.market_cap)}${p.age != null ? ' · ' + p.age.toFixed(1) + t('age_suffix') : ''}</span>
         ${starsHtml(p.stars)}
       </div>`;
     card.addEventListener('click', () => openDetail(p));
